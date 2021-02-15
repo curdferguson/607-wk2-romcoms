@@ -94,7 +94,6 @@ CREATE VIEW counts AS SELECT
 SELECT * FROM counts;
 
 /* Step 5: Use a third and final view to select the count and average together for each of the five movies with at least 3 responses */
-
 DROP VIEW IF EXISTS relevant;
 CREATE VIEW relevant AS SELECT
 	counts.The_Big_Sick AS TBS_Count, 
@@ -109,9 +108,44 @@ CREATE VIEW relevant AS SELECT
     averages.Beauty_and_the_Beast AS Beauty_AV 
 FROM averages, counts;
 
+SELECT * FROM relevant;
+
+/* Step 6: Create a reformatted table with a row for each movie, its count of ratings, and its average rating */
+DROP TABLE IF EXISTS movies_export;
+CREATE TABLE movies_export
+(
+  id                           INT          NOT NULL   PRIMARY KEY,
+  Title           			   varchar(30)  NULL,
+  Rating_Count				   INT          NULL,
+  Rating_Average               float(4)     NULL
+);
+
+INSERT INTO movies_export (id, Title)
+VALUES (1, "The Big Sick (2017)"),
+       (2, "Her (2013)"),
+	   (3, "Sideways (2004)"),
+       (4, "The Princess Bride (1987)"),
+       (5, "Beauty and the Beast (1991)");
+
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Count = src.TBS_Count WHERE dest.id = 1;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Average = src.TBS_AV WHERE dest.id = 1;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Count = src.Her_Count WHERE dest.id = 2;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Average = src.Her_AV WHERE dest.id = 2;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Count = src.Sideways_Count WHERE dest.id = 3;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Average = src.Sideways_AV WHERE dest.id = 3;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Count = src.TPB_Count WHERE dest.id = 4;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Average = src.TPB_AV WHERE dest.id = 4;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Count = src.Beauty_Count WHERE dest.id = 5;
+UPDATE movies_export AS dest, (SELECT * FROM relevant) AS src SET dest.Rating_Average = src.Beauty_AV WHERE dest.id = 5;
+-- UPDATE framework courtesy of: https://stackoverflow.com/a/13836208
+
+SELECT * FROM movies_export;
+
+
 /* Export to CSV by SELECTing into an OUTFILE */
 SELECT * INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/wk2-relevant-movies.csv'
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 ESCAPED BY '\\'
 LINES TERMINATED BY '\n'
-FROM relevant;
+FROM movies_export
+WHERE id IS NOT NULL;
